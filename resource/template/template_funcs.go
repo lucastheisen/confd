@@ -53,6 +53,7 @@ func newFuncMap() map[string]interface{} {
 	m["seq"] = Seq
 	m["atoi"] = strconv.Atoi
 	m["escapeOsgi"] = EscapeOsgi
+	m["fqdn"] = Fqdn
 	return m
 }
 
@@ -253,4 +254,12 @@ func EscapeOsgi(data string) string {
 		}
 	}
 	return buffer.String()
+}
+
+// Fqdn returns hostname if it contains a ., otherwise returns hostname.domain
+func Fqdn(hostname, domain string) string {
+	if strings.Contains(hostname, ".") {
+		return hostname
+	}
+	return hostname + "." + domain
 }
