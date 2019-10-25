@@ -1,10 +1,11 @@
 language: go
 go:
-  - '1.10'
+  - '1.12'
 #  - tip
 go_import_path: github.com/kelseyhightower/confd
 env:
-  - VAULT_ADDR='http://127.0.0.1:8200' CONSUL_VERSION=0.9.3 ETCD_VERSION=3.3.1 DYNAMODB_VERSION=2017-02-16 VAULT_VERSION=0.10.1 ZOOKEEPER_VERSION=3.4.10 RANCHER_VERSION=0.6.0
+  - GO111MODULE=on
+  - VAULT_ADDR='http://127.0.0.1:8200' CONSUL_VERSION=0.9.3 ETCD_VERSION=3.4.3 DYNAMODB_VERSION=2017-02-16 VAULT_VERSION=0.10.1 ZOOKEEPER_VERSION=3.4.10 RANCHER_VERSION=0.6.0
 services:
   - redis
 before_install:
@@ -75,5 +76,5 @@ deploy:
     - "$GOPATH/bin/confd-windows.exe"
   skip_cleanup: true
   on:
-    condition: $TRAVIS_GO_VERSION = "1.10"
+    condition: $TRAVIS_GO_VERSION = "1.12"
     tags: true
