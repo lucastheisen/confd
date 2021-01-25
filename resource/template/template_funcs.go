@@ -1,6 +1,7 @@
 package template
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -9,9 +10,11 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	util "github.com/kelseyhightower/confd/util"
 	"github.com/kelseyhightower/memkv"
 )
 
@@ -32,10 +35,13 @@ func newFuncMap() map[string]interface{} {
 	m["replace"] = strings.Replace
 	m["trimSuffix"] = strings.TrimSuffix
 	m["lookupIP"] = LookupIP
+	m["lookupIPV4"] = LookupIPV4
+	m["lookupIPV6"] = LookupIPV6
 	m["lookupSRV"] = LookupSRV
-	m["fileExists"] = isFileExist
+	m["fileExists"] = util.IsFileExist
 	m["base64Encode"] = Base64Encode
 	m["base64Decode"] = Base64Decode
+	m["parseBool"] = strconv.ParseBool
 	m["reverse"] = Reverse
 	m["sortByLength"] = SortByLength
 	m["sortKVByLength"] = SortKVByLength
@@ -45,6 +51,9 @@ func newFuncMap() map[string]interface{} {
 	m["mod"] = func(a, b int) int { return a % b }
 	m["mul"] = func(a, b int) int { return a * b }
 	m["seq"] = Seq
+	m["atoi"] = strconv.Atoi
+	m["escapeOsgi"] = EscapeOsgi
+	m["fqdn"] = Fqdn
 	return m
 }
 
@@ -178,6 +187,26 @@ func LookupIP(data string) []string {
 	return ipStrings
 }
 
+func LookupIPV6(data string) []string {
+	var addresses []string
+	for _, ip := range LookupIP(data) {
+		if strings.Contains(ip, ":") {
+			addresses = append(addresses, ip)
+		}
+	}
+	return addresses
+}
+
+func LookupIPV4(data string) []string {
+	var addresses []string
+	for _, ip := range LookupIP(data) {
+		if strings.Contains(ip, ".") {
+			addresses = append(addresses, ip)
+		}
+	}
+	return addresses
+}
+
 type sortSRV []*net.SRV
 
 func (s sortSRV) Len() int {
@@ -210,4 +239,27 @@ func Base64Encode(data string) string {
 func Base64Decode(data string) (string, error) {
 	s, err := base64.StdEncoding.DecodeString(data)
 	return string(s), err
+}
+
+func EscapeOsgi(data string) string {
+	// quotes, double quotes, backslash, the equals sign and spaces need to be escaped
+	var buffer bytes.Buffer
+	for _, runeValue := range data {
+		switch runeValue {
+		case 39, 34, 92, 61, 32:
+			buffer.WriteRune(92)
+			buffer.WriteRune(runeValue)
+		default:
+			buffer.WriteRune(runeValue)
+		}
+	}
+	return buffer.String()
+}
+
+// Fqdn returns hostname if it contains a ., otherwise returns hostname.domain
+func Fqdn(hostname, domain string) string {
+	if strings.Contains(hostname, ".") {
+		return hostname
+	}
+	return hostname + "." + domain
 }
